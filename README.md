@@ -279,3 +279,12 @@ rm -rf /etc/cni/net.d
 rm -rf $HOME/.kube
 iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
 ```
+
+Root cause, for your notes/README
+Two compounding issues from the netplan cleanup:
+
+The tee (not tee -a) command used earlier accidentally overwrote /etc/hosts instead of appending, wiping out the 127.0.0.1 localhost / ::1 localhost entries
+Without those entries, localhost lookups fell through to DNS instead of resolving instantly and locally — and combined with the extra/conflicting nameservers from the DHCP cleanup, those lookups sometimes timed out
+Calico's felix health checks (-felix-ready, -felix-live) call localhost internally, so they kept failing/timing out, triggering repeated liveness-probe restarts
+
+Fixed by restoring proper /etc/hosts entries on both nodes and removing localhost from the ::1 line (since felix has IPv6 disabled), then cycling the calico-node pods to pick up healthy state.
