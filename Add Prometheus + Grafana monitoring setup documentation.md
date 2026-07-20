@@ -255,3 +255,30 @@ kubectl describe pod <pod-name> -n <namespace>
 - [ ] Verify Prometheus/Grafana persistence via PVCs (`kubectl get pvc -n monitoring`) so metric history survives pod restarts
 - [ ] Replace `kubectl port-forward` + SSH tunnel with a permanent Ingress or NodePort for Grafana/Prometheus access
 - [ ] Define custom alert rules (node CPU > 85%, disk > 80%, pod restart spikes, NodeNotReady)
+
+Q.explain your monitoring setup how it works/ how you setup monitoring in kubernetes
+Professional Answer
+
+In our Kubernetes environment we use the kube-prometheus-stack for cluster monitoring. It includes Prometheus, Grafana, Alertmanager, node-exporter and kube-state-metrics.
+
+Prometheus continuously scrapes metrics from Kubernetes components like the kubelet, API server, node-exporter and kube-state-metrics. We visualize those metrics in Grafana using dashboards at the cluster, node, namespace and workload levels.
+
+We primarily monitor node health, CPU, memory, disk utilization, pod resource consumption, pod restarts, CrashLoopBackOff events, deployment replica health and Kubernetes object status. We also monitor application response time and availability where required.
+
+Alertmanager is configured with alert rules for critical conditions such as high CPU or memory usage, NodeNotReady, disk utilization, excessive pod restarts and failed deployments. Alerts are routed to notification channels like Slack or email for the operations team.
+
+During incidents, Grafana helps us identify abnormal resource utilization while Prometheus metrics and Kubernetes events help us determine whether the issue is related to the infrastructure, Kubernetes platform or the application. We also correlate the metrics with application logs to perform root cause analysis.
+
+Suppose production CPU becomes 100%. What do you check?"
+
+Answer
+
+First, I'd identify whether the issue is node-level or pod-level using Grafana dashboards.
+
+If it's node-level, I'd check which node has high CPU and identify the top-consuming pods.
+
+Then I'd verify whether the increase is due to legitimate traffic or a malfunctioning application by checking pod metrics, Kubernetes events and application logs.
+
+I'd check if HPA has already scaled the deployment and whether any pods are pending due to insufficient cluster capacity. If required, I'd verify that the Cluster Autoscaler has provisioned additional worker nodes.
+
+Finally, I'd check for resource limit issues, runaway processes, recent deployments or code changes before deciding whether to roll back, increase resources or scale the application.
